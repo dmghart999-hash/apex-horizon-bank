@@ -1,28 +1,35 @@
 'use client';
 import React, { useState, useEffect } from 'react';
 import { supabase } from '../lib/supabase';
-async function getBankData() {
-  if (!supabase) {
-    return [];
-  }
 
-  try {
-    const { data, error } = await supabase.from("profiles").select("*").limit(5);
+export default function Home() {
+  const [rows, setRows] = useState<any[]>([]);
+  const [loading, setLoading] = useState(true);
 
-    if (error) {
-      console.error("Supabase query error:", error.message);
-      return [];
+  useEffect(() => {
+    async function fetchBankData() {
+      if (!supabase) {
+        setLoading(false);
+        return;
+      }
+      try {
+        // Queries the bank_accounts table we created in Step 3
+        const { data, error } = await supabase.from("bank_accounts").select("*").limit(5);
+
+        if (error) {
+          console.error("Supabase query error:", error.message);
+        } else if (data) {
+          setRows(data);
+        }
+      } catch (error) {
+        console.error("Supabase fetch failed:", error);
+      } finally {
+        setLoading(false);
+      }
     }
 
-    return data ?? [];
-  } catch (error) {
-    console.error("Supabase fetch failed:", error);
-    return [];
-  }
-}
-
-export default async function Home() {
-  const rows = await getBankData();
+    fetchBankData();
+  }, []);
 
   return (
     <main style={{ padding: 24, fontFamily: "sans-serif" }}>
@@ -36,15 +43,15 @@ export default async function Home() {
       <section style={{ marginTop: 24 }}>
         <h2>Latest records</h2>
 
-        {!supabase ? (
-          <p>Once the real credentials are added, this page will show live data.</p>
+        {loading ? (
+          <p>Loading database records...</p>
         ) : rows.length === 0 ? (
-          <p>No rows returned yet. Add a table named profiles or update the query.</p>
+          <p>No student rows returned yet. Create a sandbox profile by logging in.</p>
         ) : (
           <ul>
             {rows.map((row) => (
-              <li key={String(row.id ?? Math.random())}>
-                {JSON.stringify(row)}
+              <li key={String(row.id ?? Math.random())} style={{ marginBottom: 8, fontFamily: 'mono' }}>
+                <strong>User:</strong> {row.username} | <strong>Checking:</strong> ${row.checking_balance}
               </li>
             ))}
           </ul>
