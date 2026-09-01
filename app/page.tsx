@@ -1,4 +1,4 @@
-import Image from "next/image";
+import Image from "use client";
 
 export default function Home() {
   return (
