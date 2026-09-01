@@ -1,366 +1,224 @@
 'use client';
 
-import { useEffect, useState } from 'react';
+import { useState } from 'react';
 import { supabase } from '@/src/lib/supabase';
 
-type BankAccount = {
-  id?: string | number;
-  username?: string;
-  checking_balance?: number;
-  savings_balance?: number;
-};
-
 export default function Home() {
-  const [rows, setRows] = useState<BankAccount[]>([]);
-  const [loading, setLoading] = useState(true);
-  const [error, setError] = useState('');
+  const [username, setUsername] = useState('');
+  const [password, setPassword] = useState('');
+  const [loading, setLoading] = useState(false);
+  const [message, setMessage] = useState('');
 
-  useEffect(() => {
-    async function loadAccounts() {
-      if (!supabase) {
-        setError('Supabase is not configured.');
-        setLoading(false);
-        return;
-      }
+  async function handleLogin(e: React.FormEvent) {
+    e.preventDefault();
 
-      try {
-        const { data, error: queryError } = await supabase
-          .from('bank_accounts')
-          .select('*')
-          .limit(10);
-
-        if (queryError) {
-          setError(queryError.message);
-          return;
-        }
-
-        setRows(data || []);
-      } catch (err) {
-        setError(
-          err instanceof Error ? err.message : 'Unable to load accounts.'
-        );
-      } finally {
-        setLoading(false);
-      }
+    if (!supabase) {
+      setMessage('Supabase is not configured.');
+      return;
     }
 
-    loadAccounts();
-  }, []);
+    if (!username.trim() || !password) {
+      setMessage('Please enter your username and password.');
+      return;
+    }
 
-  const totalChecking = rows.reduce(
-    (sum, row) => sum + Number(row.checking_balance || 0),
-    0
-  );
+    setLoading(true);
+    setMessage('');
 
-  const totalSavings = rows.reduce(
-    (sum, row) => sum + Number(row.savings_balance || 0),
-    0
-  );
+    const email = `${username.trim().toLowerCase()}@apexhorizonbank.demo`;
+
+    const { error } = await supabase.auth.signInWithPassword({
+      email,
+      password,
+    });
+
+    if (error) {
+      setMessage('Invalid username or password.');
+      setLoading(false);
+      return;
+    }
+
+    window.location.href = '/';
+  }
 
   return (
     <main
       style={{
         minHeight: '100vh',
+        display: 'flex',
+        alignItems: 'center',
+        justifyContent: 'center',
+        padding: 24,
         background:
-          'linear-gradient(135deg, #06142e 0%, #0b2a55 50%, #071a38 100%)',
+          'radial-gradient(circle at top left, #123c69 0%, #06142e 45%, #020817 100%)',
         color: 'white',
-        padding: '40px 20px',
         fontFamily: 'Arial, sans-serif',
       }}
     >
       <div
         style={{
-          maxWidth: 1100,
-          margin: '0 auto',
+          width: '100%',
+          maxWidth: 460,
+          background: 'rgba(255,255,255,0.08)',
+          border: '1px solid rgba(255,255,255,0.15)',
+          borderRadius: 28,
+          padding: 36,
+          boxShadow: '0 25px 80px rgba(0,0,0,0.35)',
+          backdropFilter: 'blur(18px)',
         }}
       >
         <div
           style={{
-            display: 'flex',
-            justifyContent: 'space-between',
-            alignItems: 'center',
-            marginBottom: 40,
+            textAlign: 'center',
+            marginBottom: 32,
           }}
         >
-          <div>
-            <div
-              style={{
-                color: '#60a5fa',
-                fontSize: 14,
-                fontWeight: 'bold',
-                letterSpacing: 2,
-                marginBottom: 10,
-              }}
-            >
-              SECURE DIGITAL BANKING
-            </div>
-
-            <h1
-              style={{
-                fontSize: 42,
-                margin: 0,
-                fontWeight: 800,
-              }}
-            >
-              Apex Horizon <span style={{ color: '#38bdf8' }}>Bank</span>
-            </h1>
-
-            <p
-              style={{
-                color: '#b8c7dc',
-                fontSize: 17,
-                marginTop: 12,
-              }}
-            >
-              Your modern banking dashboard
-            </p>
-          </div>
-
           <div
             style={{
-              background: 'rgba(34,197,94,0.15)',
-              border: '1px solid rgba(34,197,94,0.4)',
-              color: '#86efac',
-              padding: '10px 16px',
-              borderRadius: 30,
-              fontSize: 14,
+              color: '#60a5fa',
+              fontSize: 13,
               fontWeight: 'bold',
+              letterSpacing: 3,
+              marginBottom: 12,
             }}
           >
-            ● Secure
+            SECURE DIGITAL BANKING
           </div>
+
+          <h1
+            style={{
+              margin: 0,
+              fontSize: 38,
+              fontWeight: 800,
+            }}
+          >
+            Apex Horizon{' '}
+            <span style={{ color: '#38bdf8' }}>Bank</span>
+          </h1>
+
+          <p
+            style={{
+              color: '#a9bad1',
+              marginTop: 12,
+              lineHeight: 1.5,
+            }}
+          >
+            Classroom banking simulation
+          </p>
         </div>
 
-        <section
-          style={{
-            display: 'grid',
-            gridTemplateColumns: 'repeat(auto-fit, minmax(220px, 1fr))',
-            gap: 20,
-            marginBottom: 30,
-          }}
-        >
-          <div
+        <form onSubmit={handleLogin}>
+          <label
             style={{
-              background: 'rgba(255,255,255,0.08)',
-              border: '1px solid rgba(255,255,255,0.12)',
-              borderRadius: 20,
-              padding: 25,
+              display: 'block',
+              color: '#bfdbfe',
+              fontSize: 14,
+              fontWeight: 'bold',
+              marginBottom: 8,
             }}
           >
-            <div style={{ color: '#93c5fd', fontSize: 14 }}>
-              CHECKING BALANCE
-            </div>
+            Username
+          </label>
 
-            <div
-              style={{
-                fontSize: 32,
-                fontWeight: 800,
-                marginTop: 10,
-              }}
-            >
-              ${totalChecking.toLocaleString()}
-            </div>
-          </div>
-
-          <div
+          <input
+            type="text"
+            value={username}
+            onChange={(e) => setUsername(e.target.value)}
+            placeholder="Enter your username"
+            autoComplete="username"
             style={{
-              background: 'rgba(255,255,255,0.08)',
-              border: '1px solid rgba(255,255,255,0.12)',
-              borderRadius: 20,
-              padding: 25,
+              width: '100%',
+              boxSizing: 'border-box',
+              padding: '15px 16px',
+              borderRadius: 14,
+              border: '1px solid rgba(255,255,255,0.15)',
+              background: 'rgba(0,0,0,0.2)',
+              color: 'white',
+              outline: 'none',
+              fontSize: 16,
+              marginBottom: 20,
+            }}
+          />
+
+          <label
+            style={{
+              display: 'block',
+              color: '#bfdbfe',
+              fontSize: 14,
+              fontWeight: 'bold',
+              marginBottom: 8,
             }}
           >
-            <div style={{ color: '#93c5fd', fontSize: 14 }}>
-              SAVINGS BALANCE
-            </div>
+            Password
+          </label>
 
-            <div
-              style={{
-                fontSize: 32,
-                fontWeight: 800,
-                marginTop: 10,
-              }}
-            >
-              ${totalSavings.toLocaleString()}
-            </div>
-          </div>
-
-          <div
+          <input
+            type="password"
+            value={password}
+            onChange={(e) => setPassword(e.target.value)}
+            placeholder="Enter your password"
+            autoComplete="current-password"
             style={{
-              background: 'linear-gradient(135deg, #0284c7, #2563eb)',
-              borderRadius: 20,
-              padding: 25,
+              width: '100%',
+              boxSizing: 'border-box',
+              padding: '15px 16px',
+              borderRadius: 14,
+              border: '1px solid rgba(255,255,255,0.15)',
+              background: 'rgba(0,0,0,0.2)',
+              color: 'white',
+              outline: 'none',
+              fontSize: 16,
+              marginBottom: 20,
             }}
-          >
-            <div style={{ color: '#dbeafe', fontSize: 14 }}>
-              TOTAL ACCOUNTS
-            </div>
+          />
 
-            <div
-              style={{
-                fontSize: 32,
-                fontWeight: 800,
-                marginTop: 10,
-              }}
-            >
-              {rows.length}
-            </div>
-          </div>
-        </section>
-
-        <section
-          style={{
-            background: 'rgba(255,255,255,0.07)',
-            border: '1px solid rgba(255,255,255,0.12)',
-            borderRadius: 24,
-            padding: 30,
-          }}
-        >
-          <div
-            style={{
-              display: 'flex',
-              justifyContent: 'space-between',
-              alignItems: 'center',
-              marginBottom: 25,
-            }}
-          >
-            <div>
-              <h2 style={{ margin: 0, fontSize: 25 }}>
-                Recent Accounts
-              </h2>
-
-              <p style={{ color: '#9fb1c8', marginBottom: 0 }}>
-                Latest banking records from Supabase
-              </p>
-            </div>
-
-            <div
-              style={{
-                color: '#86efac',
-                fontSize: 13,
-                fontWeight: 'bold',
-              }}
-            >
-              {supabase ? '● DATABASE CONNECTED' : '● DATABASE OFFLINE'}
-            </div>
-          </div>
-
-          {loading && (
-            <div
-              style={{
-                padding: 30,
-                textAlign: 'center',
-                color: '#bfdbfe',
-              }}
-            >
-              Loading account information...
-            </div>
-          )}
-
-          {!loading && error && (
+          {message && (
             <div
               style={{
                 background: 'rgba(239,68,68,0.12)',
                 border: '1px solid rgba(239,68,68,0.3)',
                 color: '#fca5a5',
-                borderRadius: 15,
-                padding: 20,
+                borderRadius: 12,
+                padding: 14,
+                marginBottom: 18,
+                fontSize: 14,
               }}
             >
-              Database error: {error}
+              {message}
             </div>
           )}
 
-          {!loading && !error && rows.length === 0 && (
-            <div
-              style={{
-                padding: 30,
-                textAlign: 'center',
-                color: '#9fb1c8',
-              }}
-            >
-              No bank accounts found yet.
-            </div>
-          )}
+          <button
+            type="submit"
+            disabled={loading}
+            style={{
+              width: '100%',
+              padding: '16px',
+              border: 'none',
+              borderRadius: 14,
+              background: loading
+                ? '#475569'
+                : 'linear-gradient(135deg, #0284c7, #2563eb)',
+              color: 'white',
+              fontSize: 16,
+              fontWeight: 'bold',
+              cursor: loading ? 'not-allowed' : 'pointer',
+            }}
+          >
+            {loading ? 'Signing in...' : 'Sign In'}
+          </button>
+        </form>
 
-          {!loading && !error && rows.length > 0 && (
-            <div
-              style={{
-                display: 'grid',
-                gap: 12,
-              }}
-            >
-              {rows.map((row, index) => (
-                <div
-                  key={String(row.id ?? index)}
-                  style={{
-                    display: 'flex',
-                    justifyContent: 'space-between',
-                    alignItems: 'center',
-                    background: 'rgba(255,255,255,0.05)',
-                    borderRadius: 15,
-                    padding: '18px 20px',
-                  }}
-                >
-                  <div>
-                    <div
-                      style={{
-                        fontWeight: 'bold',
-                        fontSize: 17,
-                      }}
-                    >
-                      {row.username || 'Bank Customer'}
-                    </div>
-
-                    <div
-                      style={{
-                        color: '#8fa4bd',
-                        fontSize: 13,
-                        marginTop: 5,
-                      }}
-                    >
-                      Account #{String(row.id ?? index + 1)}
-                    </div>
-                  </div>
-
-                  <div style={{ textAlign: 'right' }}>
-                    <div
-                      style={{
-                        color: '#7dd3fc',
-                        fontSize: 13,
-                      }}
-                    >
-                      Checking
-                    </div>
-
-                    <div
-                      style={{
-                        fontWeight: 'bold',
-                        fontSize: 18,
-                      }}
-                    >
-                      $
-                      {Number(
-                        row.checking_balance || 0
-                      ).toLocaleString()}
-                    </div>
-                  </div>
-                </div>
-              ))}
-            </div>
-          )}
-        </section>
-
-        <footer
+        <div
           style={{
+            marginTop: 24,
             textAlign: 'center',
             color: '#7186a1',
-            fontSize: 13,
-            marginTop: 30,
+            fontSize: 12,
           }}
         >
-          Apex Horizon Bank • Secure Banking Dashboard
-        </footer>
+          Demo classroom environment • Not a real bank
+        </div>
       </div>
     </main>
   );
